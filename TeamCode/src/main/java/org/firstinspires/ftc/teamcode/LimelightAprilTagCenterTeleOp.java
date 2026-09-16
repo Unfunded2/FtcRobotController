@@ -12,8 +12,6 @@ import java.util.List;
 
 @TeleOp(name = "Limelight AprilTag Center", group = "TeamCode")
 public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
-    private static final double DRIVE_SCALE = 0.65;
-    private static final double TURN_SCALE = 0.55;
     private static final double CENTER_STRAFE_GAIN = 0.02;
     private static final double MAX_CENTER_STRAFE = 0.45;
     private static final double LOG_INTERVAL_SECONDS = 0.5;
@@ -42,15 +40,16 @@ public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
         limelight.pipelineSwitch(0);
         limelight.start();
 
-        telemetry.addLine("Ready: left bumper to auto-center on AprilTag.");
+        telemetry.addLine("Ready: RB auto-center, LB slow mode.");
         telemetry.update();
         waitForStart();
 
         try {
             while (opModeIsActive()) {
-                double drive = -gamepad1.left_stick_y * DRIVE_SCALE;
-                double strafe = -gamepad1.left_stick_x * DRIVE_SCALE;
-                double turn = -gamepad1.right_stick_x * TURN_SCALE;
+                double speedMul = gamepad1.left_bumper ? 0.5 : 1.0;
+                double forward = -gamepad1.left_stick_y;
+                double turn = gamepad1.right_stick_x;
+                double strafe = gamepad1.right_trigger - gamepad1.left_trigger;
 
                 boolean tagFound = false;
                 int tagId = -1;
@@ -74,9 +73,9 @@ public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
                     }
                 }
 
-                if (gamepad1.left_bumper && tagFound) {
+                if (gamepad1.right_bumper && tagFound) {
                     strafe = Range.clip(-tagX * CENTER_STRAFE_GAIN, -MAX_CENTER_STRAFE, MAX_CENTER_STRAFE);
-                    drive = 0.0;
+                    forward = 0.0;
                     turn = 0.0;
                     telemetry.addData("AutoCenter", "ON strafe=%.2f (x error %.2f deg)", strafe, tagX);
                 } else {
@@ -90,36 +89,19 @@ public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
                     telemetry.addLine("Tag: not found");
                 }
 
-                moveRobot(drive, strafe, turn);
-                telemetry.addData("Drive", "drive=%.2f strafe=%.2f turn=%.2f", drive, strafe, turn);
+                bLeftMotor.setPower((forward + turn - strafe) * speedMul);
+                fLeftMotor.setPower((forward + turn + strafe) * speedMul);
+                bRightMotor.setPower((forward - turn + strafe) * speedMul);
+                fRightMotor.setPower((forward - turn - strafe) * speedMul);
+                telemetry.addData("Drive", "fwd=%.2f strafe=%.2f turn=%.2f mul=%.2f", forward, strafe, turn, speedMul);
                 telemetry.update();
             }
         } finally {
             limelight.stop();
-            moveRobot(0.0, 0.0, 0.0);
+            bLeftMotor.setPower(0.0);
+            fLeftMotor.setPower(0.0);
+            bRightMotor.setPower(0.0);
+            fRightMotor.setPower(0.0);
         }
-    }
-
-    private void moveRobot(double x, double y, double yaw) {
-        double frontLeftPower = x - y - yaw;
-        double frontRightPower = x + y + yaw;
-        double backLeftPower = x + y - yaw;
-        double backRightPower = x - y + yaw;
-
-        double max = Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower));
-        max = Math.max(max, Math.abs(backLeftPower));
-        max = Math.max(max, Math.abs(backRightPower));
-
-        if (max > 1.0) {
-            frontLeftPower /= max;
-            frontRightPower /= max;
-            backLeftPower /= max;
-            backRightPower /= max;
-        }
-
-        fLeftMotor.setPower(frontLeftPower);
-        fRightMotor.setPower(frontRightPower);
-        bLeftMotor.setPower(backLeftPower);
-        bRightMotor.setPower(backRightPower);
     }
 }
