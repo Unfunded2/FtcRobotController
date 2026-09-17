@@ -92,6 +92,8 @@ public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
                 int tagId = -1;
                 double tagX = 0.0;
                 double tagY = 0.0;
+                boolean limelightResultValid = false;
+                double limelightTx = 0.0;
                 int audienceTagCount = 0;
                 int scoringTagCount = 0;
                 double audienceTagYSum = 0.0;
@@ -99,6 +101,8 @@ public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
 
                 LLResult result = limelight.getLatestResult();
                 if (result != null && result.isValid()) {
+                    limelightResultValid = true;
+                    limelightTx = result.getTx();
                     List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
                     if (fiducials != null) {
                         for (LLResultTypes.FiducialResult tag : fiducials) {
@@ -161,19 +165,19 @@ public class LimelightAprilTagCenterTeleOp extends LinearOpMode {
                 }
 
                 if (autoCenterActive) {
-                    if (tagFound) {
-                        if (Math.abs(tagX) <= CENTERED_MARGIN_DEGREES) {
+                    if (limelightResultValid) {
+                        if (Math.abs(limelightTx) <= CENTERED_MARGIN_DEGREES) {
                             autoCenterActive = false;
-                            telemetry.log().add(String.format("Auto-center complete for tag %d (x error %.2f deg)", tagId, tagX));
-                            telemetry.addData("AutoCenter", "DONE (x error %.2f deg)", tagX);
+                            telemetry.log().add(String.format("Auto-center complete (tx error %.2f deg)", limelightTx));
+                            telemetry.addData("AutoCenter", "DONE (tx error %.2f deg)", limelightTx);
                         } else {
-                            strafe = Range.clip(-tagX * CENTER_STRAFE_GAIN, -MAX_CENTER_STRAFE, MAX_CENTER_STRAFE);
+                            strafe = Range.clip(-limelightTx * CENTER_STRAFE_GAIN, -MAX_CENTER_STRAFE, MAX_CENTER_STRAFE);
                             forward = 0.0;
                             turn = 0.0;
-                            telemetry.addData("AutoCenter", "ON strafe=%.2f (x error %.2f deg)", strafe, tagX);
+                            telemetry.addData("AutoCenter", "ON strafe=%.2f (tx error %.2f deg)", strafe, limelightTx);
                         }
                     } else {
-                        telemetry.addData("AutoCenter", "ON waiting for %s tag", selectedAlliance);
+                        telemetry.addData("AutoCenter", "ON waiting for target (pipeline 0)");
                     }
                 } else {
                     telemetry.addData("AutoCenter", "OFF");
