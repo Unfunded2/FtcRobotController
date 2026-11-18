@@ -62,20 +62,18 @@ public class TwoWheelTrackingLocalizer implements Localizer {
     }
 
     @Override
-    public Pose2d update() {
+    public void update() {
         pinpoint.update();
 
         Pose2D position = pinpoint.getPosition();
-        Pose2D velocity = pinpoint.getVelocity();
         poseEstimate = new Pose2d(
                 position.getX(DistanceUnit.INCH),
                 position.getY(DistanceUnit.INCH),
                 position.getHeading(AngleUnit.RADIANS));
         poseVelocity = new Pose2d(
-                velocity.getX(DistanceUnit.INCH),
-                velocity.getY(DistanceUnit.INCH),
-                velocity.getHeading(AngleUnit.RADIANS));
-        return poseEstimate;
+                pinpoint.getVelX() / 25.4,
+                pinpoint.getVelY() / 25.4,
+                pinpoint.getHeadingVelocity());
     }
 
     @Override
