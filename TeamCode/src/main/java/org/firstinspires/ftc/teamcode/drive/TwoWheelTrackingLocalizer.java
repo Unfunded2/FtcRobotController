@@ -3,101 +3,83 @@ package org.firstinspires.ftc.teamcode.drive;
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.localization.TwoTrackingWheelLocalizer;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.acmerobotics.roadrunner.localization.Localizer;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.util.Encoder;
-
-import java.util.Arrays;
-import java.util.List;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 /*
- * Sample tracking wheel localizer implementation assuming the standard configuration:
+ * Road Runner localizer backed by a goBILDA Pinpoint v2.
  *
- *    ^
- *    |
- *    | ( x direction)
- *    |
- *    v
- *    <----( y direction )---->
-
- *        (forward)
- *    /--------------\
- *    |     ____     |
- *    |     ----     |    <- Perpendicular Wheel
- *    |           || |
- *    |           || |    <- Parallel Wheel
- *    |              |
- *    |              |
- *    \--------------/
- *
+ * The existing pod coordinates are expressed in Road Runner coordinates.
+ * Pinpoint's X pod is the parallel pod and its Y pod is the perpendicular pod.
  */
-public class TwoWheelTrackingLocalizer extends TwoTrackingWheelLocalizer {
+public class TwoWheelTrackingLocalizer implements Localizer {
     public static double TICKS_PER_REV = 0;
     public static double WHEEL_RADIUS = 2.05; // in
-    public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder) speed
+    public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder speed)
 
-    public static double PARALLEL_X = 0; // X is the up and down direction
+    public static double PARALLEL_X = 0; // X is the forward and back direction
     public static double PARALLEL_Y = 7.5; // Y is the strafe direction
 
     public static double PERPENDICULAR_X = 0.5;
     public static double PERPENDICULAR_Y = -7.5;
 
-    // Parallel/Perpendicular to the forward axis
-    // Parallel wheel is parallel to the forward axis
-    // Perpendicular is perpendicular to the forward axis
-    private Encoder parallelEncoder, perpendicularEncoder;
-
-    private SampleMecanumDrive drive;
+    private final GoBildaPinpointDriver pinpoint;
+    private Pose2d poseEstimate = new Pose2d();
+    private Pose2d poseVelocity = new Pose2d();
 
     public TwoWheelTrackingLocalizer(HardwareMap hardwareMap, SampleMecanumDrive drive) {
-        super(Arrays.asList(
-            new Pose2d(PARALLEL_X, PARALLEL_Y, 0),
-            new Pose2d(PERPENDICULAR_X, PERPENDICULAR_Y, Math.toRadians(90))
-        ));
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        this.drive = drive;
-
-        parallelEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "parallelEncoder"));
-        perpendicularEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "perpendicularEncoder"));
-
-        // TODO: reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE)
-    }
-
-    public static double encoderTicksToInches(double ticks) {
-        return WHEEL_RADIUS * 2 * Math.PI * GEAR_RATIO * ticks / TICKS_PER_REV;
-    }
-
-    @Override
-    public double getHeading() {
-        return drive.getRawExternalHeading();
-    }
-
-    @Override
-    public Double getHeadingVelocity() {
-        return drive.getExternalHeadingVelocity();
+        pinpoint.setOffsets(PARALLEL_Y, PERPENDICULAR_X, DistanceUnit.INCH);
+        pinpoint.setEncoderResolution(
+                GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        pinpoint.resetPosAndIMU();
     }
 
     @NonNull
     @Override
-    public List<Double> getWheelPositions() {
-        return Arrays.asList(
-                encoderTicksToInches(parallelEncoder.getCurrentPosition()),
-                encoderTicksToInches(perpendicularEncoder.getCurrentPosition())
-        );
+    public Pose2d getPoseEstimate() {
+        return poseEstimate;
     }
 
-    @NonNull
     @Override
-    public List<Double> getWheelVelocities() {
-        // TODO: If your encoder velocity can exceed 32767 counts / second (such as the REV Through Bore and other
-        //  competing magnetic encoders), change Encoder.getRawVelocity() to Encoder.getCorrectedVelocity() to enable a
-        //  compensation method
+    public void setPoseEstimate(Pose2d poseEstimate) {
+        this.poseEstimate = poseEstimate;
+        pinpoint.setPosition(new Pose2D(
+                DistanceUnit.INCH,
+                poseEstimate.getX(),
+                poseEstimate.getY(),
+                AngleUnit.RADIANS,
+                poseEstimate.getHeading()));
+    }
 
-        return Arrays.asList(
-                encoderTicksToInches(parallelEncoder.getRawVelocity()),
-                encoderTicksToInches(perpendicularEncoder.getRawVelocity())
-        );
+    @Override
+    public Pose2d update() {
+        pinpoint.update();
+
+        Pose2D position = pinpoint.getPosition();
+        Pose2D velocity = pinpoint.getVelocity();
+        poseEstimate = new Pose2d(
+                position.getX(DistanceUnit.INCH),
+                position.getY(DistanceUnit.INCH),
+                position.getHeading(AngleUnit.RADIANS));
+        poseVelocity = new Pose2d(
+                velocity.getX(DistanceUnit.INCH),
+                velocity.getY(DistanceUnit.INCH),
+                velocity.getHeading(AngleUnit.RADIANS));
+        return poseEstimate;
+    }
+
+    @Override
+    public Pose2d getPoseVelocity() {
+        return poseVelocity;
     }
 }
