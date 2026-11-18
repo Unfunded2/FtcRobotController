@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 
 /*
  * Road Runner localizer backed by a goBILDA Pinpoint v2.
@@ -71,9 +72,9 @@ public class TwoWheelTrackingLocalizer implements Localizer {
                 position.getY(DistanceUnit.INCH),
                 position.getHeading(AngleUnit.RADIANS));
         poseVelocity = new Pose2d(
-                pinpoint.getVelX() / 25.4,
-                pinpoint.getVelY() / 25.4,
-                pinpoint.getHeadingVelocity());
+                pinpoint.getVelX(DistanceUnit.INCH),
+                pinpoint.getVelY(DistanceUnit.INCH),
+                pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
     }
 
     @Override
