@@ -97,16 +97,6 @@ public class SampleMecanumDrive extends MecanumDrive {
         fLeftMotor.setDirection(DcMotorEx.Direction.REVERSE);
         bLeftMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
-        fLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        fRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        bLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        bRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        bLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        fLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        bRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        fRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         motors = Arrays.asList(fLeftMotor, bLeftMotor, bRightMotor, fRightMotor);
 
         for (DcMotorEx motor : motors) {
@@ -117,6 +107,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
         if (RUN_USING_ENCODER) {
             setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         }
 
         setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

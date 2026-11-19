@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.drive;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
 /*
  * Constants shared between multiple drive types.
@@ -34,7 +33,7 @@ public class DriveConstants {
      * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
      * from DriveVelocityPIDTuner.
      */
-    public static final boolean RUN_USING_ENCODER = false;
+    public static final boolean RUN_USING_ENCODER = true;
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(0, 0, 0,
       getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
 
@@ -48,7 +47,7 @@ public class DriveConstants {
      */
     public static double WHEEL_RADIUS = 2.05; // in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 15.5; // in
+    public static double TRACK_WIDTH = 13.68; // in
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
@@ -58,7 +57,7 @@ public class DriveConstants {
      */
     public static double kV = 1.0 / rpmToVelocity(MAX_RPM);
     public static double kA = 0;
-    public static double kStatic = 0;
+    public static double kStatic = 0.05;
 
     /*
      * These values are used to generate the trajectories for you robot. To ensure proper operation,
@@ -90,8 +89,8 @@ public class DriveConstants {
      */
     public static double MAX_VEL = 56.931942068354225;
     public static double MAX_ACCEL = 56.931942068354225;
-    public static double MAX_ANG_VEL = Math.toRadians(210.44903225806448);
-    public static double MAX_ANG_ACCEL = Math.toRadians(210.44903225806448);
+    public static double MAX_ANG_VEL = Math.toRadians(238.44736842105263);
+    public static double MAX_ANG_ACCEL = Math.toRadians(238.44736842105263);
 
 
     public static double encoderTicksToInches(double ticks) {
@@ -106,10 +105,4 @@ public class DriveConstants {
       // see https://docs.google.com/document/d/1tyWrXDfMidwYyP_5H4mZyVgaEswhOC35gvdmP-V-5hA/edit#heading=h.61g9ixenznbx
       return 32767 / ticksPerSecond;
     }
-
-    public static RevHubOrientationOnRobot.LogoFacingDirection LOGO_FACING_DIR =
-            RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD;
-
-    public static RevHubOrientationOnRobot.UsbFacingDirection USB_FACING_DIR =
-            RevHubOrientationOnRobot.UsbFacingDirection.RIGHT;
 }
